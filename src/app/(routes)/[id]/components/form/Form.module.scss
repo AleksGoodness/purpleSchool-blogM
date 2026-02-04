@@ -15,10 +15,14 @@
 	place-items: center;
 	gap: 1rem;
 	border-radius: 8px;
-	background-color: var(--success);
 	padding: 2rem;
 	text-align: center;
 	&__success {
+		background-color: var(--success);
+		color: black;
+	}
+	&__error {
+		background-color: var(--accent);
 		color: black;
 	}
 	&__btn {

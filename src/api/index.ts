@@ -28,7 +28,7 @@ export const getData = async <T>(path: string): Promise<T> => {
 	return returnedData
 }
 
-export const postComment = async (data: FormInputs): Promise<FormInputs> => {
+export const postComment = async (data: FormInputs): Promise<{ message: string }> => {
 	const resp = await fetch(API.posts, {
 		method: 'POST',
 		body: JSON.stringify(data),

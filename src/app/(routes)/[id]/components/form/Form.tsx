@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import cn from 'classnames'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { postComment } from '@/api'
@@ -14,71 +15,65 @@ function Form() {
 		register,
 		reset,
 		handleSubmit,
-		formState: { errors },
-	} = useForm<FormInputs>()
+		clearErrors,
 
-	const [errorMessage, setErrorMessage] = useState<string>('')
-	const [success, setSuccess] = useState<string>('')
+		formState: { errors, isSubmitSuccessful, isSubmitted, isValidating },
+	} = useForm<FormInputs>({ defaultValues: { comment: '', name: '' } })
+
+	const [serverMessage, setServerMessage] = useState('')
 
 	const onSubmit = async (formData: FormInputs) => {
-		try {
-			setErrorMessage('')
-			const response = await postComment(formData)
-
-			if (response.message) {
-				setSuccess(response.message)
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				setErrorMessage(error.message)
-			}
-		}
-	}
-	const resetForm = () => {
+		const resp = await postComment(formData)
 		reset()
-		setSuccess('')
+
+		setServerMessage(resp.message)
 	}
+
+	useEffect(() => {
+		if (isValidating) setServerMessage('')
+	}, [isValidating])
+
+	useEffect(() => {
+		const timer = setTimeout(() => clearErrors(), 3000)
+
+		return () => clearTimeout(timer)
+	}, [clearErrors])
 
 	return (
-		<>
-			{!success && (
-				<form
-					className={styles['form']}
-					onSubmit={handleSubmit(onSubmit)}>
-					<CustomInput
-						{...register('name', { required: { message: 'You forget type your name', value: true } })}
-						placeholder="Имя"
-					/>
-					{errors.name && <Paragraph appearance="s">{errors.name.message}</Paragraph>}
-					<CustomTextArea
-						{...register('comment', {
-							required: { message: 'please add comment', value: true },
-							minLength: { value: 15, message: 'At least 15 symbols' },
-							maxLength: { value: 200, message: 'max comment length are 200 symbols' },
-						})}
-						placeholder="Комментарии"
-					/>
-					{errors.comment && <Paragraph appearance="s">{errors.comment.message}</Paragraph>}
-
-					<CustomButton className={styles['btn']}>Отправить</CustomButton>
-				</form>
-			)}
-			{success && (
-				<div className={styles.panel}>
-					<Paragraph
-						appearance="l"
-						className={styles['panel__success']}>
-						{success}
-					</Paragraph>
+		<form
+			className={styles['form']}
+			onSubmit={handleSubmit(onSubmit)}>
+			{isSubmitted && Boolean(serverMessage) && (
+				<div className={cn(styles.panel, isSubmitSuccessful ? styles.panel__success : styles.panel__error)}>
+					<Paragraph appearance="l">{serverMessage}</Paragraph>
 					<CustomButton
 						className={styles['panel__btn']}
-						onClick={resetForm}>
+						onClick={() => {
+							reset()
+						}}>
 						reset form
 					</CustomButton>
 				</div>
 			)}
-			{errorMessage && <div>{errorMessage}</div>}
-		</>
+			<CustomInput
+				{...register('name', { required: { message: 'You forget type your name', value: true } })}
+				placeholder="Имя"
+				style={{ backgroundColor: errors.name ? 'var(--accent)' : 'white' }}
+			/>
+			{errors.name && <Paragraph appearance="s">{errors.name.message}</Paragraph>}
+			<CustomTextArea
+				{...register('comment', {
+					required: { message: 'Please add comment', value: true },
+					minLength: { value: 15, message: 'At least 15 symbols' },
+					maxLength: { value: 200, message: 'max comment length are 200 symbols' },
+				})}
+				style={{ backgroundColor: errors.comment ? 'var(--accent)' : 'white' }}
+				placeholder="Комментарии"
+			/>
+			{errors.comment && <Paragraph appearance="s">{errors.comment.message}</Paragraph>}
+
+			<CustomButton className={styles['btn']}>Отправить</CustomButton>
+		</form>
 	)
 }
 
